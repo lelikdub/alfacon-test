@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Test task for www.alfacon.su</title>
+  <meta name="description" content="test task for www.alfacon.su">
+  <meta name="author" content="Alexey Medevedev">
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-rc.24/css/uikit.min.css">
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.17/vue.min.js"></script>
+</head>
+
+<body>
+	<div id="app">
+
+  <section v-if="errored">
+    <p>К сожалению мы не можем получить информацию, попробуйте снова позже</p>
+  </section>
+  
+  <section v-else>
+    <div v-if="loading">Загрузка...</div>
+
+    <div class="uk-margin uk-card uk-card-default uk-card-body" v-else>
+	        <legend class="uk-legend">Выберите поезд:</legend>
+			<select v-model="filterCategory" class="uk-select">
+			  <option v-for="train in unique(trains, 'TRAINNAME')" v-bind:value="train.TRAINNAME">
+			    {{ train.TRAINNAME }}
+			      </option>
+			</select>
+			<span>
+			</span>
+	
+	<table v-if="filterCategory!==''" class="uk-table uk-table-striped">
+	    <thead>
+	        <tr>  
+				<th>Номер <br> вагона</th>
+	            <th>Дефект</th>
+	            <th>Количество <br> найденых</th>
+	            <th>Количество <br> исправленых</th>
+	        </tr>
+	    </thead>
+	    <tbody>
+	        <tr v-for="train in filteredTrains">
+	            <td> {{ train.WAGONNUMBER }}</td>
+	            <td>{{ train.DEFECTNAME}}</td>
+	            <td>{{train.CNTFOUND}}</td>
+	            <td>{{train.CNTFIXED}}</td>
+	        </tr>
+	    </tbody>
+	</table>
+    </div>
+  </section>
+</div> 
+<script>
+	Vue.mixin({
+	  computed: {
+	    unique () {
+	      return function (arr, key) {
+	        var output = []
+	        var usedKeys = {}
+	        for (var i = 0; i < arr.length; i++) {
+	          if (!usedKeys[arr[i][key]]) {
+	            usedKeys[arr[i][key]] = true
+	            output.push(arr[i])
+	          }
+	        }
+	        return output
+	      }
+	    }
+	  }
+	})  	
+	var dataURL = 'http://api.techgroup.su/actsListPub';
+	new Vue({
+		el: '#app',
+		data() {
+		    return {
+		      trains: null,
+		      filterCategory: '',
+		      loading: true,
+		      errored: false
+		    };
+			},
+		mounted() {
+		    axios
+		      .get(dataURL)
+		      .then(response => {
+		        this.trains = response.data;
+		      })
+		      .catch(error => {
+		        console.log(error);
+		        this.errored = true;
+		      })
+		      .finally(() => (this.loading = false));
+		},
+		computed:{
+		    filteredTrains () {
+		    	let trains = this.trains
+				if(this.filterCategory) {
+					trains = trains.filter((p) => {
+			        	return p.TRAINNAME.indexOf(this.filterCategory) !== -1
+			        })
+					return trains
+		      	}
+		    }
+		  }
+	});
+  </script>
+</body>
+</html>
